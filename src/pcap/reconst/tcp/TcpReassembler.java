@@ -4,9 +4,11 @@
 
 package pcap.reconst.tcp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +28,7 @@ public class TcpReassembler {
 	private List<TcpPacket> orderedPackets = new ArrayList<TcpPacket>();
 	private List<Integer> reqIndexes = new ArrayList<Integer>();
 	private List<Integer> respIndexes = new ArrayList<Integer>();
-	private String packetData = null;
+	private byte[] packetData = null;
 	private Map<Integer, Integer> packetPositions = new HashMap<Integer, Integer>();
 
 	private boolean rebuildData = true;
@@ -51,30 +53,62 @@ public class TcpReassembler {
 		}
 	}
 
+	/**
+	 * Gets the content of the stream as a String with the default platform encoding.
+	 * 
+	 * @return the content of the stream as a String with the default platform encoding.
+	 */
 	public String getOrderedPacketData() {
+		return new String(getOrderedPacketDataBytes());
+	}
+	
+	/**
+	 * Gets the content of the stream as a byte[].
+	 * 
+	 * @return the content of the stream as a byte[].
+	 */
+	public byte[] getOrderedPacketDataBytes() {
 		checkBuildPacketData();
 		return packetData;
+	}
+	
+	/**
+	 * Gets a copy of a subsection of the stream content as a byte[].
+	 * 
+	 * @param start Offset into the overall stream from which to start adding to the result.
+	 * @param end Offset in the overall stream to no longer include in the result.
+	 * @return A subsection of the stream content as a byte[].
+	 */
+	public byte[] getOrderedPacketDataBytes(int start, int end) {
+		return Arrays.copyOfRange(getOrderedPacketDataBytes(), start, end);
 	}
 	
 	public List<TcpPacket> getOrderedPackets(){
 		return this.orderedPackets;
 	}
 
-	public void buildPacketData() {
-		StringBuffer buf = new StringBuffer();
+	private void buildPacketData() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		for (int i = 0; i < orderedPackets.size(); i++) {
 			byte[] data = orderedPackets.get(i).getData();
+			
 			if (data != null && data.length > 0) {
-				int startpos = buf.length();
-				buf.append(new String(data));
-				packetPositions.put(buf.length(), i);
-				if (log.isDebugEnabled()) {
-					log.debug("Start position: " + startpos + " End position: "
-							+ buf.length() + "\n" + new String(data));
+				int startpos = baos.size();
+				try {
+					baos.write(data);
+					
+					packetPositions.put(baos.size(), i);
+
+					if (log.isDebugEnabled()) {
+						log.debug("Start position: " + startpos + " End position: "
+								+ baos.size() + "\n" + new String(data));
+					}
+				} catch (IOException e) {
+					log.error("Unable to add packet data at stream offset : " + startpos, e);
 				}
 			}
 		}
-		packetData = buf.toString();
+		packetData = baos.toByteArray();
 	}
 	
 	//start and end are indexes in the reconstructed output
@@ -154,7 +188,7 @@ public class TcpReassembler {
 	public MessageMetadata getMessageMetadata(String needle) {
 		checkBuildPacketData();
 
-		int beginIndex = this.packetData.indexOf(needle);
+		int beginIndex = getOrderedPacketData().indexOf(needle);
 		int endIndex = beginIndex + needle.length();
 
 		return this.getMessageMetadata(beginIndex, endIndex);
