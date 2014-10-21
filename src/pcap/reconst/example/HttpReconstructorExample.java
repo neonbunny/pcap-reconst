@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
@@ -69,28 +70,42 @@ public class HttpReconstructorExample {
 						//Request with no body.
 						System.out.println(((RecordedHttpRequest)req).getUrl());
 					} else {
-						//Request with a body.
-						RecordedHttpEntityEnclosingRequest rreq = 
-								(RecordedHttpEntityEnclosingRequest)req;
-						System.out.println(rreq.getUrl());
-						System.out.println(EntityUtils.toString(rreq.getEntity()));
+						try
+						{
+							//Request with a body.
+							RecordedHttpEntityEnclosingRequest rreq = 
+									(RecordedHttpEntityEnclosingRequest)req;
+							System.out.println(rreq.getUrl());
+							System.out.println(EntityUtils.toString(rreq.getEntity()));
+						}
+						catch(ConnectionClosedException e)
+						{
+							System.out.println("ERROR: " + e.getMessage());
+						}
 					}
 					
 					//A flow could be missing a response, we must check
 					//to see if the response is null.
 					RecordedHttpResponse resp = flow.getResponse();
 					if(resp != null){
-						System.out.println(resp.getStatusLine());
-						System.out.println("Raw response data:");
-						System.out.println(EntityUtils.toString(resp.getEntity()));
-						
-						//Content-Encoding is gzip or deflate, attempt to decode it.
-						if(resp.getEntity().isRepeatable()){
-							HttpEntity decodedent = HttpDecoder.decodeResponse(resp);
-							if(decodedent != null){
-								System.out.println("Decoded response data:");
-								System.out.println(EntityUtils.toString(decodedent));
+						try
+						{
+							System.out.println(resp.getStatusLine());
+							System.out.println("Raw response data:");
+							System.out.println(EntityUtils.toString(resp.getEntity()));
+							
+							//Content-Encoding is gzip or deflate, attempt to decode it.
+							if(resp.getEntity().isRepeatable()){
+								HttpEntity decodedent = HttpDecoder.decodeResponse(resp);
+								if(decodedent != null){
+									System.out.println("Decoded response data:");
+									System.out.println(EntityUtils.toString(decodedent));
+								}
 							}
+						}
+						catch(ConnectionClosedException e)
+						{
+							System.out.println("ERROR: " + e.getMessage());
 						}
 					}
 				}	
