@@ -693,23 +693,25 @@ public class HttpFlowParser {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing flow " + flow);
 		}
-		String rawdata = null;
+		byte[] rawdata = null;
 		if (flow.hasRequestData()) {
-			rawdata = assembler.getOrderedPacketData().substring(
-					flow.reqStart, flow.reqEnd);
+			rawdata = assembler.getOrderedPacketDataBytes(flow.reqStart, flow.reqEnd);
 			
 			RecordedHttpRequestMessage request;
 			RecordedHttpResponse response = null;
 
 			if (flow.hadResponseData()) {
-				rawdata += assembler.getOrderedPacketData().substring(
-						flow.respStart, flow.respEnd);
+				byte[] respBytes = assembler.getOrderedPacketDataBytes(flow.respStart, flow.respEnd);
+				byte[] reqRespbytes = new byte[rawdata.length + respBytes.length];
+				System.arraycopy(rawdata, 0, reqRespbytes, 0, rawdata.length);
+				System.arraycopy(respBytes, 0, reqRespbytes, rawdata.length, respBytes.length);
+				rawdata = reqRespbytes;
 				request = getRequest(flow, assembler);
 				response = getResponse(flow, assembler);
 			} else {
 				request = getRequest(flow, assembler);
 			}
-			return new RecordedHttpFlow(rawdata.getBytes(), request, response);
+			return new RecordedHttpFlow(rawdata, request, response);
 		}
 		return null;
 	}
