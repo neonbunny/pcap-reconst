@@ -21,7 +21,6 @@ public class JpcapReconstructor implements Reconstructor {
 		this.packetReassembler = packetReassembler;
 	}
 
-	@Override
 	public Map<TcpConnection, TcpReassembler> reconstruct(String filename)
 			throws Exception {
 		if (log.isDebugEnabled()) {

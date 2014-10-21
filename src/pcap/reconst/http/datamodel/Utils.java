@@ -41,7 +41,6 @@ public class Utils {
 	private static Header[] sort(Header[] a){
 		Header[] copy = Arrays.copyOf(a, a.length);
 		Arrays.sort(copy, new Comparator<Header>(){
-			@Override
 			public int compare(Header o1, Header o2) {
 				int val = o1.getName().compareTo(o2.getName());
 				if(val == 0){

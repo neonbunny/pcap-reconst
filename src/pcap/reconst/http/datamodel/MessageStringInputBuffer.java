@@ -12,7 +12,6 @@ public class MessageStringInputBuffer extends AbstractSessionInputBuffer {
 		init(new ByteArrayInputStream(message.getBytes()), 10, new BasicHttpParams());
 	}
 	
-	@Override
 	public boolean isDataAvailable(int arg0) throws IOException {
 		throw new UnsupportedOperationException();
 	}

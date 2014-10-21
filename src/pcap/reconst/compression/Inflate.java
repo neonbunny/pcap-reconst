@@ -21,7 +21,6 @@ public class Inflate implements Unzip {
 		this.dict = dict;
 	}
 
-	@Override
 	public byte[] unzip() {
 		Inflater inflater = new Inflater();
 

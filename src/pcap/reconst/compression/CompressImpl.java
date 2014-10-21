@@ -16,7 +16,6 @@ public class CompressImpl implements Compress {
 		this.dict = dict;
 	}
 
-	@Override
 	public byte[] compress() {
 		byte[] compressed = input;
 		if (CompressionType.gzip == compressionType) {

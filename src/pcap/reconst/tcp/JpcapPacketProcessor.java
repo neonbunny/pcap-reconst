@@ -28,7 +28,6 @@ public class JpcapPacketProcessor implements PacketReceiver {
 	}
 
 	// this method is called every time Jpcap captures a packet
-	@Override
 	public void receivePacket(Packet packet) {
 		packetNumber++;
 		if (log.isDebugEnabled()) {

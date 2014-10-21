@@ -38,37 +38,30 @@ public class RecordedHttpResponse extends BasicHttpResponse implements
 		this.messdata = messdata;
 	}
 
-	@Override
 	public double getStartTS() {
 		return this.messdata.getTimestamps().getStartTS();
 	}
 
-	@Override
 	public double getEndTS() {
 		return this.messdata.getTimestamps().getEndTS();
 	}
 
-	@Override
 	public InetAddress getSrcIp() {
 		return this.messdata.getSrcIp();
 	}
 
-	@Override
 	public InetAddress getDstIp() {
 		return this.messdata.getDstIp();
 	}
 
-	@Override
 	public int getSrcPort() {
 		return this.messdata.getSrcPort();
 	}
 
-	@Override
 	public int getDstPort() {
 		return this.messdata.getDstPort();
 	}
 	
-	@Override
 	public boolean equals(Object obj){
 		boolean retval = false;
 		if(obj instanceof RecordedHttpResponse){

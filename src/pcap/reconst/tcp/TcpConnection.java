@@ -73,7 +73,6 @@ public class TcpConnection implements Comparable<TcpConnection> {
 				+ dstIp.toString().replace("/", "") + "." + dstPort;
 	}
 
-	@Override
 	public int compareTo(TcpConnection other) {
 		if (this.equals(other)) {
 			return 0;

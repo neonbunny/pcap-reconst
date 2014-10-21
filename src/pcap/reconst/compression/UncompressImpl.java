@@ -17,7 +17,6 @@ public class UncompressImpl implements Uncompress {
 		this.dict = dict;
 	}
 
-	@Override
 	public byte[] uncompress() {
 		byte[] uncompressed = input;
 		if (CompressionType.gzip == compressionType) {

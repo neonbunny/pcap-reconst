@@ -21,7 +21,6 @@ public class Deflate implements Zip {
 		this.dict = dict;
 	}
 
-	@Override
 	public byte[] zip() {
 		Deflater deflater = new Deflater();
 

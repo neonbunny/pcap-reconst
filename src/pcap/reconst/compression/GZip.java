@@ -21,7 +21,6 @@ public class GZip implements Zip {
 		this.input = input;
 	}
 
-	@Override
 	public byte[] zip() {
 		byte[] zipped = new byte[0];
 		ByteArrayOutputStream baos = null;

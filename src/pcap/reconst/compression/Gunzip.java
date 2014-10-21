@@ -21,7 +21,6 @@ public class Gunzip implements Unzip {
 		this.input = input;
 	}
 
-	@Override
 	public byte[] unzip() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		GZIPInputStream gzipis = null;
