@@ -689,7 +689,7 @@ public class HttpFlowParser {
 		return httpPackets;
 	}
 	
-	private RecordedHttpFlow toHttp(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException {
+	protected RecordedHttpFlow toHttp(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing flow " + flow);
 		}
@@ -737,7 +737,7 @@ public class HttpFlowParser {
 		return null;
 	}*/
 	
-	private RecordedHttpRequestMessage getRequest(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException{
+	protected RecordedHttpRequestMessage getRequest(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException{
 		String reqstring = assembler.getOrderedPacketData().substring(
 				flow.reqStart, flow.reqEnd);
 		MessageMetadata mdata = assembler
@@ -755,7 +755,7 @@ public class HttpFlowParser {
 				parseRecordedRequest(reqstring, mdata);
 	}*/
 	
-	private RecordedHttpResponse getResponse(FlowBuf flow, 
+	protected RecordedHttpResponse getResponse(FlowBuf flow, 
 			TcpReassembler assembler) throws IOException, HttpException{
 		String respstring = assembler.getOrderedPacketData().substring(
 				flow.respStart, flow.respEnd);
@@ -783,7 +783,7 @@ public class HttpFlowParser {
 		return retval;
 	}
 	
-	private class FlowBuf{
+	protected class FlowBuf{
 		public int reqStart = -1, reqEnd = -1, respStart = -1, respEnd = -1;
 		
 		public boolean hasRequestData(){
