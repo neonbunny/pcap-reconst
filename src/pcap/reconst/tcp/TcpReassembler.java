@@ -77,10 +77,20 @@ public class TcpReassembler {
 	 * 
 	 * @param start Offset into the overall stream from which to start adding to the result.
 	 * @param end Offset in the overall stream to no longer include in the result.
-	 * @return A subsection of the stream content as a byte[].
+	 * @return A subsection of the stream content as a byte[] or the whole stream if 
+	 * the start or end values are outside of the valid range.
 	 */
-	public byte[] getOrderedPacketDataBytes(int start, int end) {
-		return Arrays.copyOfRange(getOrderedPacketDataBytes(), start, end);
+	public byte[] getOrderedPacketDataBytes(int start, int end) 
+	{
+		byte[] stream = getOrderedPacketDataBytes();
+		if(start < 0 || end > stream.length)
+		{
+			return stream;
+		}
+		else 
+		{
+			return Arrays.copyOfRange(getOrderedPacketDataBytes(), start, end);
+		}
 	}
 	
 	public List<TcpPacket> getOrderedPackets(){
