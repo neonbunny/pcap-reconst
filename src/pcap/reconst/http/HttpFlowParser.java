@@ -25,7 +25,9 @@ public class HttpFlowParser {
 	private static Log log = LogFactory.getLog(HttpFlowParser.class);
 
 	public static final String HTTP_REQ_REGEX = "(GET|POST|HEAD|OPTIONS|PUT|DELETE|TRACE|CONNECT)\\s\\S+\\sHTTP/[1-2]\\.[0-9]\\s";
-	public static final String HTTP_RESP_REGEX = "HTTP/[1-2]\\.[0-9]\\s[1-5][0-9][0-9](.[0-9][0-9]?)?\\s";
+	//Don't treat HTTP 100 status codes as the start of a response, e.g. "100 Continue" is a provisional response 
+	//and will later result in another response code for the same conversation
+	public static final String HTTP_RESP_REGEX = "HTTP/[1-2]\\.[0-9]\\s[2-5][0-9][0-9](.[0-9][0-9]?)?\\s";
 
 	private final static int ZERO = 0;
 
