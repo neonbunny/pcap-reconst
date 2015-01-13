@@ -2,10 +2,12 @@ package pcap.reconst.http;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,10 +26,10 @@ public class HttpFlowParser {
 
 	private static Log log = LogFactory.getLog(HttpFlowParser.class);
 
-	public static final String HTTP_REQ_REGEX = "(GET|POST|HEAD|OPTIONS|PUT|DELETE|TRACE|CONNECT)\\s\\S+\\sHTTP/[1-2]\\.[0-9]\\s";
+	public static final Pattern HTTP_REQ_REGEX = Pattern.compile("(GET|POST|HEAD|OPTIONS|PUT|DELETE|TRACE|CONNECT)\\s\\S+\\sHTTP/[1-2]\\.[0-9]\\s");
 	//Don't treat HTTP 100 status codes as the start of a response, e.g. "100 Continue" is a provisional response 
 	//and will later result in another response code for the same conversation
-	public static final String HTTP_RESP_REGEX = "HTTP/[1-2]\\.[0-9]\\s[2-5][0-9][0-9](.[0-9][0-9]?)?\\s";
+	public static final Pattern HTTP_RESP_REGEX = Pattern.compile("HTTP/[1-2]\\.[0-9]\\s[2-5][0-9][0-9](.[0-9][0-9]?)?\\s");
 
 	private final static int ZERO = 0;
 
@@ -37,10 +39,10 @@ public class HttpFlowParser {
 		this.map = map;
 	}
 	
-	private Map<Integer, Boolean> buildMessageStartIndex(String buf){
+	protected static SortedMap<Integer, Boolean> buildMessageStartIndex(String buf){
 		List<Integer> reqIndexes = matchStartLocations(buf, HTTP_REQ_REGEX);
 		List<Integer> respIndexes = matchStartLocations(buf, HTTP_RESP_REGEX);
-		Map<Integer, Boolean> matchLocations = new HashMap<Integer, Boolean>();
+		SortedMap<Integer, Boolean> matchLocations = new TreeMap<Integer, Boolean>();
 		for(Integer key : reqIndexes){
 			matchLocations.put(key, true); //true = request
 		}
@@ -51,11 +53,9 @@ public class HttpFlowParser {
 	}
 	
 	//TODO fix for the chunked encoding case containing a request in a chunk
-	private boolean isPipelined(TcpReassembler assembler){
-		Map<Integer, Boolean> matchLocations = this.buildMessageStartIndex(
-				assembler.getOrderedPacketData());
+	private static boolean isPipelined(TcpReassembler assembler){
+		SortedMap<Integer, Boolean> matchLocations = buildMessageStartIndex(assembler.getOrderedPacketData());
 		List<Integer> matchIndexes = new ArrayList<Integer>(matchLocations.keySet());
-		Collections.sort(matchIndexes);
 		
 		if(matchIndexes.size() > 1){
 			for(int i = 0; i < matchIndexes.size() - 1; i++){
@@ -79,73 +79,12 @@ public class HttpFlowParser {
 		}
 		return false;
 	}
+
 	
-	/*private boolean fixPipelinedSections(List<FlowBuf> pReqSection, List<FlowBuf> pRespSection,
-			TcpReassembler assembler){
-		if(pReqSection.size() != pRespSection.size()){
-			int sizeDiff = Math.abs(pReqSection.size() - pRespSection.size());
-			if(log.isInfoEnabled()){
-				log.info("Section size difference: " + sizeDiff);
-			}
-			List<Integer> remove = new ArrayList<Integer>();
-			if(pReqSection.size() > pRespSection.size()){ // remove from pReqSection
-				if(log.isInfoEnabled()){
-					log.info("Removing from request section.");
-				}
-				for(int i = 0; i < pRespSection.size() - 1; i++){
-					if(remove.size() == sizeDiff){
-						break;
-					}
-					int begin = pRespSection.get(i).respStart;
-					int end = pRespSection.get(i+1).respEnd;
-					if(assembler.errorBetween(begin, end)){
-						remove.add(i+1);
-					}
-				}
-				if(remove.size() == sizeDiff){
-					for(int index : remove){
-						pReqSection.remove(index);
-					}
-					return true;
-				} else {
-					if(log.isInfoEnabled()){
-						log.info("Unable to find enough requests to remove: " + remove.size());
-					}
-				}
-			} else { // remove from pRespSection
-				if(log.isInfoEnabled()){
-					log.info("Removing from response section.");
-				}
-				for(int i = 0; i < pReqSection.size() - 1; i++){
-					if(remove.size() == sizeDiff){
-						break;
-					}
-					int begin = pReqSection.get(i).reqStart;
-					int end = pReqSection.get(i+1).reqEnd;
-					if(assembler.errorBetween(begin, end)){
-						remove.add(i+1);
-					}
-				}
-				if(remove.size() == sizeDiff){
-					for(int index : remove){
-						pRespSection.remove(index);
-					}
-					return true;
-				} else {
-					if(log.isInfoEnabled()){
-						log.info("Unable to find enough responses to remove: " + remove.size());
-					}
-				}
-			}
-		}
-		return false;
-	}*/
-	
-	private List<FlowBuf> parsePipelinedFlows(String buf, TcpReassembler assembler){
+	private static List<FlowBuf> parsePipelinedFlows(String buf, TcpReassembler assembler){
 		List<FlowBuf> retval = new ArrayList<FlowBuf>();
-		Map<Integer, Boolean> matchLocations = this.buildMessageStartIndex(buf);
+		SortedMap<Integer, Boolean> matchLocations = buildMessageStartIndex(buf);
 		List<Integer> matchIndexes = new ArrayList<Integer>(matchLocations.keySet());
-		Collections.sort(matchIndexes);
 		
 		if(log.isDebugEnabled()){
 			String logval = "Match Locations:\n";
@@ -170,7 +109,6 @@ public class HttpFlowParser {
 			for(int i = 0; i < matchIndexes.size(); i++){
 				boolean current = matchLocations.get(matchIndexes.get(i));
 				if(i + 1 < matchIndexes.size()){
-					//TODO i should probably be i+1 in the following line, check and fix
 					boolean next = matchLocations.get(matchIndexes.get(i + 1));
 					if(current){
 						FlowBuf reqchunk = new FlowBuf();
@@ -194,7 +132,7 @@ public class HttpFlowParser {
 						if(next){
 							//if response then request
 							if(singReqFlow != null){								
-								retval.add(this.mergeFlowBuf(singReqFlow, respchunk));
+								retval.add(mergeFlowBuf(singReqFlow, respchunk));
 								singReqFlow = null;
 							} else {
 								pRespSection.add(respchunk);
@@ -229,7 +167,7 @@ public class HttpFlowParser {
 						}
 						if(pReqSection.size() == pRespSection.size()){
 							for(int q = 0; q < pReqSection.size(); q++){
-								retval.add(this.mergeFlowBuf(pReqSection.get(q), pRespSection.get(q)));
+								retval.add(mergeFlowBuf(pReqSection.get(q), pRespSection.get(q)));
 							}
 							pReqSection.clear();
 							pRespSection.clear();
@@ -291,151 +229,19 @@ public class HttpFlowParser {
 	}
 	
 	
-	/*private List<List<String>> parsePipelinedFlows(String buf){
-		List<List<String>> retval = new ArrayList<List<String>>();
-		Map<Integer, Boolean> matchLocations = this.buildMessageStartIndex(buf);
-		List<Integer> matchIndexes = new ArrayList<Integer>(matchLocations.keySet());
-		Collections.sort(matchIndexes);
-		
-		if(log.isDebugEnabled()){
-			String logval = "Match Locations:\n";
-			for(int index : matchIndexes){
-				logval += index + " " + (matchLocations.get(index) ? "Request" : "Response") + "\n";
-			}
-			log.debug(logval);
-		}
-		
-		if(matchIndexes.size() > 0){
-			//get rid of any leading responses
-			while(!matchLocations.get(matchIndexes.get(ZERO))){
-				matchIndexes.remove(ZERO);
-				if(matchIndexes.isEmpty()){
-					break;
-				}
-			}
-		
-			List<String> pReqSection = new ArrayList<String>();
-			List<String> pRespSection = new ArrayList<String>();
-			String singReqFlow = null;
-			for(int i = 0; i < matchIndexes.size(); i++){
-				boolean current = matchLocations.get(matchIndexes.get(i));
-				if(i + 1 < matchIndexes.size()){
-					//TODO i should probably be i+1 in the following line, check and fix
-					boolean next = matchLocations.get(matchIndexes.get(i));
-					if(current){
-						String reqchunk = buf.substring(matchIndexes.get(i), matchIndexes.get(i+1));
-						if(next){
-							//if request then request
-							pReqSection.add(reqchunk);
-						} else {
-							//if request then response
-							if(pReqSection.size() > 0){
-								pReqSection.add(reqchunk);
-							} else {
-								singReqFlow=reqchunk;
-							}
-						}
-					} else {
-						String respchunk = buf.substring(matchIndexes.get(i), matchIndexes.get(i+1));
-						if(next){
-							//if response then request
-							if(singReqFlow != null){
-								List<String> flow = new ArrayList<String>();
-								flow.add(singReqFlow);
-								flow.add(respchunk);
-								retval.add(flow);
-								singReqFlow = null;
-							} else {
-								pRespSection.add(respchunk);
-							}
-							if(pReqSection.size() != pRespSection.size()){
-								throw new RuntimeException("Unequal pipeline sections.");
-							}
-						} else {
-							//if response then response
-							if(pReqSection.size() > 0){
-								pRespSection.add(respchunk);
-							} else {
-								throw new RuntimeException("Two adjacent responses in error.");
-							}
-						}
-						if(pReqSection.size() == pRespSection.size()){
-							for(int q = 0; q < pReqSection.size(); q++){
-								List<String> flow = new ArrayList<String>();
-								flow.add(pReqSection.get(q));
-								flow.add(pRespSection.get(q));
-								retval.add(flow);
-							}
-							pReqSection.clear();
-							pRespSection.clear();
-						}
-					}
-				} else {
-					//i = len - 1
-					if(current){ // if request
-						String reqchunk = buf.substring(matchIndexes.get(i));
-						pReqSection.add(reqchunk);
-						for(String req : pReqSection){
-							List<String> flow = new ArrayList<String>();
-							flow.add(req);
-							flow.add(null);
-							retval.add(flow);
-						}
-					} else { //if response
-						String respchunk = buf.substring(matchIndexes.get(i));
-						if(singReqFlow != null){ //single flow
-							List<String> flow = new ArrayList<String>();
-							flow.add(singReqFlow);
-							flow.add(respchunk);
-							retval.add(flow);
-							singReqFlow = null;
-						} else if (pReqSection.size() > 0) { //pipelined request section
-							pRespSection.add(respchunk);
-						} else {
-							throw new RuntimeException("Single unmatched response");
-						}
-					}
-					
-					//if at the end of the stream, should be the end of the pipelined section
-					if(pReqSection.size() == pRespSection.size()){
-						//if pReqSection and pRespSection are empty then the loop is never executed
-						for(int q = 0; q < pReqSection.size(); q++){
-							List<String> flow = new ArrayList<String>();
-							flow.add(pReqSection.get(q));
-							flow.add(pRespSection.get(q));
-							retval.add(flow);
-						}
-						pReqSection.clear();
-						pRespSection.clear();
-					} else {
-						if(pReqSection.size() > pRespSection.size()){
-							throw new RuntimeException("Incompleted pipelined response section.");
-						} else {
-							throw new RuntimeException("Incompleted pipelined request section.");
-						}
-					}
-				}
-	
-			}
-		}
-		return retval;
-	}*/
-	
-	private List<Integer> matchStartLocations(String buf, String regex){
+	private static List<Integer> matchStartLocations(String buf, Pattern httpReqRegex){
 		List<Integer> indexes = new ArrayList<Integer>();
-		Pattern pat = Pattern.compile(regex);
-		Matcher matcher = pat.matcher(buf);
+		Matcher matcher = httpReqRegex.matcher(buf);
 		while (matcher.find()) {
 			indexes.add(matcher.start());
 		}
 		return indexes;
 	}
 
-	private List<FlowBuf> splitFlows(String buf) {
+	private static List<FlowBuf> splitFlows(String buf) {
 		List<FlowBuf> retval = new ArrayList<FlowBuf>();
-		Map<Integer, Boolean> matchLocations = this.buildMessageStartIndex(buf);
+		SortedMap<Integer, Boolean> matchLocations = buildMessageStartIndex(buf);
 		List<Integer> matchIndexes = new ArrayList<Integer>(matchLocations.keySet());
-		Collections.sort(matchIndexes);
 		
 		if(matchIndexes.size() > 0){
 			
@@ -530,19 +336,6 @@ public class HttpFlowParser {
 		return retval;
 	}
 	
-	
-	/*private List<String> splitFlows(String buf) {
-		List<String> retval = new ArrayList<String>();
-		List<Integer> indexes = matchStartLocations(buf, HTTP_REQ_REGEX);
-		for (int i = 0; i < indexes.size(); i++) {
-			if (i == indexes.size() - 1) {
-				retval.add(buf.substring(indexes.get(i)));
-			} else {
-				retval.add(buf.substring(indexes.get(i), indexes.get(i + 1)));
-			}
-		}
-		return retval;
-	}*/
 
 	@SuppressWarnings("unused")
 	private int numRequests(String buf) {
@@ -562,43 +355,29 @@ public class HttpFlowParser {
 		return retval;
 	}
 
-	/*private int responseStart(String buf) {
-		Pattern pat = Pattern.compile(HTTP_RESP_REGEX);
-		Matcher matcher = pat.matcher(buf);
-		if (matcher.find()) {
-			return matcher.start();
-		}
-		return -1;
-	}*/
 
-	private int numMatches(String buf, String regex) {
+	private int numMatches(String buf, Pattern regex) {
 		int retval = 0;
-		Pattern pat = Pattern.compile(regex);
-		Matcher matcher = pat.matcher(buf);
+		Matcher matcher = regex.matcher(buf);
 		while (matcher.find()) {
 			retval++;
 		}
 		return retval;
 	}
 
-	private boolean hasRequestData(String buf) {
-		return this.hasDesiredData(buf, HTTP_REQ_REGEX);
+	private static boolean hasRequestData(String buf) {
+		return hasDesiredData(buf, HTTP_REQ_REGEX);
 	}
 
-	/*private boolean hasResponseData(String buf) {
-		return this.hasDesiredData(buf, HTTP_RESP_REGEX);
-	}*/
-
-	private boolean hasDesiredData(String buf, String regex) {
-		Pattern pat = Pattern.compile(regex);
-		Matcher matcher = pat.matcher(buf);
+	private static boolean hasDesiredData(String buf, Pattern regex) {
+		Matcher matcher = regex.matcher(buf);
 		return matcher.find();
 	}
 	
-	private List<RecordedHttpFlow> parseFlows(TcpConnection connection, TcpReassembler assembler) {
+	private static List<RecordedHttpFlow> parseFlows(TcpConnection connection, TcpReassembler assembler) {
 		String flowbuf = assembler.getOrderedPacketData();
 		List<RecordedHttpFlow> outputlist = new ArrayList<RecordedHttpFlow>();
-		if (this.hasRequestData(flowbuf)) {
+		if (hasRequestData(flowbuf)) {
 
 			List<FlowBuf> flows = null;
 			if(isPipelined(assembler)){
@@ -628,70 +407,33 @@ public class HttpFlowParser {
 	}
 	
 
-	/*private List<RecordedHttpFlow> parseFlows(TcpConnection connection, TcpReassembler assembler) {
-		String flowbuf = assembler.getOrderedPacketData();
-		List<RecordedHttpFlow> outputlist = new ArrayList<RecordedHttpFlow>();
-		if (this.hasRequestData(flowbuf)) {
-
-			List<String> flows = null;
-			if(isPipelined(assembler)){
-				if(log.isDebugEnabled()){
-					log.debug("Parsing pipelined stream. " + connection);
-				}
-				List<List<String>> piperesult = this.parsePipelinedFlows(flowbuf);
-				flows = new ArrayList<String>();
-				//combine the flow tups
-				for(List<String> flowtup : piperesult){
-					String flowval = flowtup.get(ZERO);
-					if(flowtup.size() > 1 && flowtup.get(1) != null){
-						flowval += flowtup.get(1);
-					}
-					flows.add(flowval);
-				}
-			} else {
-				flows = splitFlows(flowbuf);
-			}
-			for (String flow : flows) {
-				try {
-					RecordedHttpFlow httpOutput = toHttp(flow, assembler);
-					outputlist.add(httpOutput);
-				} catch (Exception e) {
-					if (log.isErrorEnabled()) {
-						log.error("", e);
-					}
-				}
-			}
-		}
-		return outputlist;
-	}*/
-
 	public Map<TcpConnection, List<RecordedHttpFlow>> parse() {
 		Map<TcpConnection, List<RecordedHttpFlow>> httpPackets = 
 				new HashMap<TcpConnection, List<RecordedHttpFlow>>();
 
-		for (TcpConnection connection : map.keySet()) {
+		for (Entry<TcpConnection, TcpReassembler> entry : map.entrySet() ) {
 			try{
-				List<RecordedHttpFlow> flows = parseFlows(connection, map.get(connection));
+				List<RecordedHttpFlow> flows = parseFlows(entry.getKey(), entry.getValue());
 				if(flows.size() > 0){
-					httpPackets.put(connection, flows);
+					httpPackets.put(entry.getKey(), flows);
 				} else {
 					if(log.isDebugEnabled()){
-						log.debug("No HTTP flows found in stream: " + connection);
+						log.debug("No HTTP flows found in stream: " + entry.getKey());
 					}
 				}
 				if (log.isDebugEnabled()) {
-					log.debug("Processed stream: " + connection);
+					log.debug("Processed stream: " + entry.getKey());
 				}
 			} catch (Exception e) {
 				if(log.isErrorEnabled()){
-					log.error("Error processing stream: " + connection, e);
+					log.error("Error processing stream: " + entry.getKey(), e);
 				}
 			}
 		}
 		return httpPackets;
 	}
 	
-	protected RecordedHttpFlow toHttp(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException {
+	protected static RecordedHttpFlow toHttp(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing flow " + flow);
 		}
@@ -719,27 +461,7 @@ public class HttpFlowParser {
 	}
 	
 	
-	/*private RecordedHttpFlow toHttp(String flow, TcpReassembler assembler) throws IOException, HttpException {
-		if (log.isDebugEnabled()) {
-			log.debug("total length " + flow.length());
-		}
-		if (this.hasRequestData(flow)) {
-			RecordedHttpRequestMessage request;
-			RecordedHttpResponse response = null;
-
-			if (this.hasResponseData(flow)) {
-				int responseIndex = this.responseStart(flow);
-				request = getRequest(flow, responseIndex, assembler);
-				response = getResponse(flow, responseIndex, assembler);
-			} else {
-				request = getRequest(flow, flow.length(), assembler);
-			}
-			return new RecordedHttpFlow(flow.getBytes(), request, response);
-		}
-		return null;
-	}*/
-	
-	protected RecordedHttpRequestMessage getRequest(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException{
+	protected static RecordedHttpRequestMessage getRequest(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException{
 		String reqstring = assembler.getOrderedPacketData().substring(
 				flow.reqStart, flow.reqEnd);
 		MessageMetadata mdata = assembler
@@ -748,16 +470,8 @@ public class HttpFlowParser {
 				parseRecordedRequest(reqstring, mdata);
 	}
 	
-	/*private RecordedHttpRequestMessage getRequest(String data, int responseIndex, 
-			TcpReassembler assembler) throws IOException, HttpException{
-		String reqstring = data.substring(ZERO, responseIndex);
-		MessageMetadata mdata = assembler
-				.getMessageMetadata(new String(reqstring));
-		return (RecordedHttpRequestMessage)RecordedHttpMessageParser.
-				parseRecordedRequest(reqstring, mdata);
-	}*/
 	
-	protected RecordedHttpResponse getResponse(FlowBuf flow, 
+	protected static RecordedHttpResponse getResponse(FlowBuf flow, 
 			TcpReassembler assembler) throws IOException, HttpException{
 		String respstring = assembler.getOrderedPacketData().substring(
 				flow.respStart, flow.respEnd);
@@ -766,17 +480,9 @@ public class HttpFlowParser {
 		return (RecordedHttpResponse)RecordedHttpMessageParser.
 				parseRecordedResponse(respstring, mdata);
 	}
+
 	
-	/*private RecordedHttpResponse getResponse(String data, int responseIndex, 
-			TcpReassembler assembler) throws IOException, HttpException{
-		String respstring = data.substring(responseIndex);
-		MessageMetadata mdata = assembler
-				.getMessageMetadata(new String(respstring));
-		return (RecordedHttpResponse)RecordedHttpMessageParser.
-				parseRecordedResponse(respstring, mdata);
-	}*/
-	
-	public FlowBuf mergeFlowBuf(FlowBuf reqChunk, FlowBuf respChunk){
+	public static FlowBuf mergeFlowBuf(FlowBuf reqChunk, FlowBuf respChunk){
 		FlowBuf retval = new FlowBuf();
 		retval.reqStart = reqChunk.reqStart;
 		retval.reqEnd = reqChunk.reqEnd;
@@ -785,7 +491,7 @@ public class HttpFlowParser {
 		return retval;
 	}
 	
-	protected class FlowBuf{
+	protected static class FlowBuf{
 		public int reqStart = -1, reqEnd = -1, respStart = -1, respEnd = -1;
 		
 		public boolean hasRequestData(){
