@@ -450,8 +450,11 @@ public class TcpReassembler {
 	}
 
 	private void incPacketIndexes(int greaterthan, int inc) {
+		//For each entry in request index
 		for (int i = 0; i < reqIndexes.size(); i++) {
+			//If the entry is larger than the limit
 			if (reqIndexes.get(i) > greaterthan) {
+				//Increase the entry by the number of packets we've just added (i.e. 1)
 				reqIndexes.set(i, reqIndexes.get(i) + inc);
 			}
 		}
