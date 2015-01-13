@@ -374,7 +374,7 @@ public class HttpFlowParser {
 		return matcher.find();
 	}
 	
-	private static List<RecordedHttpFlow> parseFlows(TcpConnection connection, TcpReassembler assembler) {
+	private List<RecordedHttpFlow> parseFlows(TcpConnection connection, TcpReassembler assembler) {
 		String flowbuf = assembler.getOrderedPacketData();
 		List<RecordedHttpFlow> outputlist = new ArrayList<RecordedHttpFlow>();
 		if (hasRequestData(flowbuf)) {
@@ -394,7 +394,7 @@ public class HttpFlowParser {
 			}
 			for (FlowBuf flow : flows) {
 				try {
-					RecordedHttpFlow httpOutput = toHttp(flow, assembler);
+					RecordedHttpFlow httpOutput = this.toHttp(flow, assembler);
 					outputlist.add(httpOutput);
 				} catch (Exception e) {
 					if (log.isErrorEnabled()) {
@@ -433,7 +433,7 @@ public class HttpFlowParser {
 		return httpPackets;
 	}
 	
-	protected static RecordedHttpFlow toHttp(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException {
+	protected RecordedHttpFlow toHttp(FlowBuf flow, TcpReassembler assembler) throws IOException, HttpException {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing flow " + flow);
 		}
