@@ -81,7 +81,7 @@ public class HttpFlowParser {
 	}
 
 	
-	private static List<FlowBuf> parsePipelinedFlows(String buf, TcpReassembler assembler){
+	protected static List<FlowBuf> parsePipelinedFlows(String buf) {
 		List<FlowBuf> retval = new ArrayList<FlowBuf>();
 		SortedMap<Integer, Boolean> matchLocations = buildMessageStartIndex(buf);
 		List<Integer> matchIndexes = new ArrayList<Integer>(matchLocations.keySet());
@@ -384,7 +384,7 @@ public class HttpFlowParser {
 				if(log.isDebugEnabled()){
 					log.debug("Parsing pipelined stream. " + connection);
 				}
-				flows = parsePipelinedFlows(flowbuf, assembler);
+				flows = parsePipelinedFlows(flowbuf);
 				
 			} else {
 				if(log.isDebugEnabled()){
