@@ -8,6 +8,8 @@ import java.net.InetAddress;
 
 import jpcap.packet.TCPPacket;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 public class JpcapTcpPacket implements TcpPacket {
 	private TCPPacket tcpPacket;
 
@@ -84,10 +86,24 @@ public class JpcapTcpPacket implements TcpPacket {
 	}
 
 	public String toString() {
-		return "sequence=" + getSequence() + " ack_num=" + getAckNum()
-				+ " length=" + getLength() + " dataLength=" + getDataLength()
-				+ " synFlag=" + getSyn() + " " + getSourceIP() + " srcPort="
-				+ getSourcePort() + " " + getDestinationIP() + " dstPort="
-				+ getDestinationPort() + " timestamp=" + getTimestampSec();
+		return new ToStringBuilder(this)
+			.append("Source IP", getSourceIP())
+			.append("Source Port", getSourcePort())
+			.append("Destination IP", getDestinationIP())
+			.append("Destination Port", getDestinationPort())
+			.append("Capture Length", getCaptureLength())
+			.append("Length", getLength())
+			.append("Header Length", getHeaderLength())
+			.append("Data Length", getDataLength())
+			.append("Sequence", getSequence())
+			.append("Ack Num", getAckNum())
+			.append("Data", getData())
+			.append("Syn", getSyn())
+			.append("Ack", getAck())
+			.append("Fin", getFin())
+			.append("Psh", getPsh())
+			.append("Timestamp Sec", getTimestampSec())
+			.append("Timestamp USec", getTimestampUSec())
+			.toString();
 	}
 }
