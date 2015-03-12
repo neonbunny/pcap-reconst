@@ -14,6 +14,8 @@ public class JnetpcapPacketProcessor<T> implements PcapPacketHandler<T> {
 
 	int packetNumber = 0;
 	private PacketReassembler packetReassembler;
+	private final Ip4 ip = new Ip4();
+	private final Tcp tcp = new Tcp();
 	
 	public JnetpcapPacketProcessor(PacketReassembler packetReassembler) {
 		this.packetReassembler = packetReassembler;
@@ -31,8 +33,6 @@ public class JnetpcapPacketProcessor<T> implements PcapPacketHandler<T> {
 			log.debug("processing #" + packetNumber + " " + packet);
 		}
 		
-		Ip4 ip = new Ip4();
-		Tcp tcp = new Tcp();
 		if (packet.hasHeader(ip) && packet.hasHeader(tcp))
 		{
 			packetReassembler.reassemble(new JnetpcapTcpPacket(packet.getCaptureHeader(), ip, tcp));

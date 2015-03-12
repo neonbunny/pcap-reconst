@@ -10,95 +10,116 @@ import org.jnetpcap.protocol.network.Ip4;
 import org.jnetpcap.protocol.tcpip.Tcp;
 
 public class JnetpcapTcpPacket implements TcpPacket {
-	private Ip4 ipPacket;
-	private Tcp tcpPacket;
-	private PcapHeader pcapHeader;
-
-	public JnetpcapTcpPacket(PcapHeader pcap, Ip4 ip, Tcp tcp) {
-		this.pcapHeader = pcap;
-		this.ipPacket = ip;
-		this.tcpPacket = tcp;
+	private InetAddress sourceIp;
+	private int sourcePort;
+	private InetAddress destinationIp;
+	private int destinationPort;
+	private int captureLength;
+	private int length;
+	private int headerLength;
+	private int dataLength;
+	private long sequence;
+	private long ackNumber;
+	private byte[] data;
+	private boolean syn;
+	private boolean ack;
+	private boolean fin;
+	private boolean psh;
+	private long timestampSec;
+	private long timestampUSec;
+	
+	public JnetpcapTcpPacket(PcapHeader pcapHeader, Ip4 ipPacket, Tcp tcpPacket) {
+		try {
+			sourceIp = Inet4Address.getByAddress(ipPacket.source());
+			destinationIp = Inet4Address.getByAddress(ipPacket.destination());
+		}
+		catch (UnknownHostException uhe) {
+			uhe.printStackTrace();
+		}
+		sourcePort = tcpPacket.source();
+		destinationPort = tcpPacket.destination();
+		captureLength = pcapHeader.caplen();
+		length = pcapHeader.wirelen();
+		headerLength = tcpPacket.getPayloadOffset();
+		dataLength = tcpPacket.getPayloadLength();
+		sequence = tcpPacket.seq();
+		ackNumber = tcpPacket.ack();
+		data = tcpPacket.getPayload();
+		syn = tcpPacket.flags_SYN();
+		ack = tcpPacket.flags_ACK();
+		fin = tcpPacket.flags_FIN();
+		psh = tcpPacket.flags_PSH();
+		timestampSec = pcapHeader.seconds();
+		timestampUSec = pcapHeader.nanos() / 1000;
 	}
 
 	public InetAddress getSourceIP() {
-		try {
-			return Inet4Address.getByAddress(ipPacket.source());
-		}
-		catch (UnknownHostException uhe) {
-			uhe.printStackTrace();
-			return null;
-		}
+		return sourceIp;
 	}
 
 	public int getSourcePort() {
-		return tcpPacket.source();
+		return sourcePort;
 	}
 
 	public InetAddress getDestinationIP() {
-		try {
-			return Inet4Address.getByAddress(ipPacket.destination());
-		}
-		catch (UnknownHostException uhe) {
-			uhe.printStackTrace();
-			return null;
-		}
+		return destinationIp;
 	}
 
 	public int getDestinationPort() {
-		return tcpPacket.destination();
+		return destinationPort;
 	}
 
 	public int getCaptureLength() {
-		return pcapHeader.caplen();
+		return captureLength;
 	}
 
 	public int getLength() {
-		return pcapHeader.wirelen();
+		return length;
 	}
 
 	public int getHeaderLength() {
 		//Appears to be a total of all headers prior to the data
-		return tcpPacket.getPayloadOffset();
+		return headerLength;
 	}
 
 	public int getDataLength() {
-		return tcpPacket.getPayloadLength();
+		return dataLength;
 	}
 
 	public long getSequence() {
-		return tcpPacket.seq();
+		return sequence;
 	}
 
 	public long getAckNum() {
-		return tcpPacket.ack();
+		return ackNumber;
 	}
 
 	public byte[] getData() {
-		return tcpPacket.getPayload();
+		return data;
 	}
 
 	public boolean getSyn() {
-		return tcpPacket.flags_SYN();
+		return syn;
 	}
 
 	public boolean getAck() {
-		return tcpPacket.flags_ACK();
+		return ack;
 	}
 
 	public boolean getFin() {
-		return tcpPacket.flags_FIN();
+		return fin;
 	}
 
 	public boolean getPsh() {
-		return tcpPacket.flags_PSH();
+		return psh;
 	}
 
 	public long getTimestampSec() {
-		return pcapHeader.seconds();
+		return timestampSec;
 	}
 
 	public long getTimestampUSec() {
-		return pcapHeader.nanos() / 1000;
+		return timestampUSec;
 	}
 
 	public String toString() {
