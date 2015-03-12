@@ -7,7 +7,7 @@ Download
 
 Source is hosted on github: 
 
-[github.com/cjneasbi/pcap-reconst](http://github.com/cjneasbi/pcap-reconst)
+[github.com/neonbunny/pcap-reconst](http://github.com/neonbunny/pcap-reconst)
 
 Requirements
 ------------
@@ -16,9 +16,9 @@ Requirements
 * [commons-lang](http://commons.apache.org/lang/) 3.1
 * [commons-logging](http://commons.apache.org/logging/) 1.1.1
 * [HttpComponents-HttpCore](http://hc.apache.org/httpcomponents-core-ga/index.html) 4.2.1
-* [jpcap](https://github.com/mgodave/Jpcap)
+* [jpcap](https://github.com/mgodave/Jpcap) or [jnetpcap](http://jnetpcap.com/) 1.4.r1425
 
-__jpcap__ is a wrapper for libpcap or winpcap and requires compilation before use.
+__jpcap__ and __jnetpcap__ are both wrappers for libpcap or winpcap.
 
 
 Usage
