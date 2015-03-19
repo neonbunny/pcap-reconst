@@ -7,6 +7,8 @@ import org.apache.commons.logging.LogFactory;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapBpfProgram;
 
+import pcap.reconst.ex.PcapException;
+
 
 public class JnetpcapReconstructor implements Reconstructor {
 	private static Log log = LogFactory.getLog(JnetpcapReconstructor.class);
@@ -25,6 +27,11 @@ public class JnetpcapReconstructor implements Reconstructor {
 		
 		StringBuilder errorBuffer = new StringBuilder();
 		Pcap pcap = Pcap.openOffline(filename, errorBuffer);
+		
+		if (pcap == null)
+		{
+			throw new PcapException(errorBuffer.toString());
+		}
 		
 		PcapBpfProgram program = new PcapBpfProgram();
 		String expression = "tcp";
