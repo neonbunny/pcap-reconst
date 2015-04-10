@@ -24,6 +24,7 @@ import pcap.reconst.http.datamodel.RecordedHttpResponse;
 import pcap.reconst.tcp.JpcapReconstructor;
 import pcap.reconst.tcp.PacketReassembler;
 import pcap.reconst.tcp.Reconstructor;
+import pcap.reconst.tcp.StatusHandle;
 import pcap.reconst.tcp.TcpConnection;
 import pcap.reconst.tcp.TcpReassembler;
 
@@ -33,7 +34,7 @@ public class HttpReconstructorExample {
 
 	public Map<TcpConnection, TcpReassembler> reconstruct(File inputFile,
 			Reconstructor reconstructor) throws Exception {
-		return reconstructor.reconstruct(inputFile.getAbsolutePath());
+		return reconstructor.reconstruct(inputFile.getAbsolutePath(), new StatusHandle());
 	}
 
 	public static void main(String[] args) {

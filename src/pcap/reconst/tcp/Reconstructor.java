@@ -7,6 +7,6 @@ import java.util.Map;
 
 
 public interface Reconstructor {
-	Map<TcpConnection, TcpReassembler> reconstruct(String filename)
+	Map<TcpConnection, TcpReassembler> reconstruct(String filename, StatusHandle status)
 			throws Exception;
 }

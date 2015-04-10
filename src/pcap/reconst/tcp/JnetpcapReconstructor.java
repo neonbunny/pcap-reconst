@@ -6,6 +6,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapBpfProgram;
+import org.jnetpcap.PcapClosedException;
 
 import pcap.reconst.ex.PcapException;
 
@@ -19,14 +20,14 @@ public class JnetpcapReconstructor implements Reconstructor {
 		this.packetReassembler = packetReassembler;
 	}
 
-	public Map<TcpConnection, TcpReassembler> reconstruct(String filename)
+	public Map<TcpConnection, TcpReassembler> reconstruct(String filename, StatusHandle status)
 			throws Exception {
 		if (log.isDebugEnabled()) {
 			log.debug("reconstructing " + filename + " ...");
 		}
 		
 		StringBuilder errorBuffer = new StringBuilder();
-		Pcap pcap = Pcap.openOffline(filename, errorBuffer);
+		final Pcap pcap = Pcap.openOffline(filename, errorBuffer);
 		
 		if (pcap == null)
 		{
@@ -39,6 +40,18 @@ public class JnetpcapReconstructor implements Reconstructor {
 		pcap.setFilter(program);
 
 		JnetpcapPacketProcessor<Integer> packetProcessor = new JnetpcapPacketProcessor<Integer>(packetReassembler);
+		status.setCancellable(new StatusHandle.Cancellable() {
+			public void cancel() {
+				try
+				{
+					pcap.breakloop();
+				}
+				catch (PcapClosedException pce)
+				{
+					//Ignore, it may have completed on its own at this point.
+				}
+			}
+		});
 		pcap.loop(Pcap.LOOP_INFINITE, packetProcessor, 1);
 		pcap.close();
 		
