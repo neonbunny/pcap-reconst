@@ -48,7 +48,7 @@ public class HttpReconstructorExample {
 			
 			//Parse the HTTP flows from the streams.
 			HttpFlowParser httpParser = new HttpFlowParser(map);
-			Map<TcpConnection, List<RecordedHttpFlow>> flows = httpParser.parse();
+			Map<TcpConnection, List<RecordedHttpFlow>> flows = httpParser.parse(new StatusHandle());
 			
 			//Count the total number of extracted flows.
 			int flowcount = 0;

@@ -19,6 +19,7 @@ import pcap.reconst.http.datamodel.RecordedHttpFlow;
 import pcap.reconst.http.datamodel.RecordedHttpRequestMessage;
 import pcap.reconst.http.datamodel.RecordedHttpResponse;
 import pcap.reconst.tcp.MessageMetadata;
+import pcap.reconst.tcp.StatusHandle;
 import pcap.reconst.tcp.TcpConnection;
 import pcap.reconst.tcp.TcpReassembler;
 
@@ -407,11 +408,15 @@ public class HttpFlowParser {
 	}
 	
 
-	public Map<TcpConnection, List<RecordedHttpFlow>> parse() {
+	public Map<TcpConnection, List<RecordedHttpFlow>> parse(StatusHandle status) {
 		Map<TcpConnection, List<RecordedHttpFlow>> httpPackets = 
 				new HashMap<TcpConnection, List<RecordedHttpFlow>>();
 
 		for (Entry<TcpConnection, TcpReassembler> entry : map.entrySet() ) {
+			if (status.isCancelled())
+			{
+				break;
+			}
 			try{
 				List<RecordedHttpFlow> flows = parseFlows(entry.getKey(), entry.getValue());
 				if(flows.size() > 0){
