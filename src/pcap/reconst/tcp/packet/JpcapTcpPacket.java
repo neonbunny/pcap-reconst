@@ -10,7 +10,7 @@ import jpcap.packet.TCPPacket;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class JpcapTcpPacket implements TcpPacket {
+public class JpcapTcpPacket extends AbstractTcpPacket {
 	private TCPPacket tcpPacket;
 
 	public JpcapTcpPacket(TCPPacket tcpPacket) {
@@ -83,27 +83,5 @@ public class JpcapTcpPacket implements TcpPacket {
 
 	public long getTimestampUSec() {
 		return tcpPacket.usec;
-	}
-
-	public String toString() {
-		return new ToStringBuilder(this)
-			.append("Source IP", getSourceIP())
-			.append("Source Port", getSourcePort())
-			.append("Destination IP", getDestinationIP())
-			.append("Destination Port", getDestinationPort())
-			.append("Capture Length", getCaptureLength())
-			.append("Length", getLength())
-			.append("Header Length", getHeaderLength())
-			.append("Data Length", getDataLength())
-			.append("Sequence", getSequence())
-			.append("Ack Num", getAckNum())
-			.append("Data", getData())
-			.append("Syn", getSyn())
-			.append("Ack", getAck())
-			.append("Fin", getFin())
-			.append("Psh", getPsh())
-			.append("Timestamp Sec", getTimestampSec())
-			.append("Timestamp USec", getTimestampUSec())
-			.toString();
 	}
 }

@@ -21,12 +21,7 @@ import pcap.reconst.http.datamodel.RecordedHttpFlow;
 import pcap.reconst.http.datamodel.RecordedHttpRequest;
 import pcap.reconst.http.datamodel.RecordedHttpRequestMessage;
 import pcap.reconst.http.datamodel.RecordedHttpResponse;
-import pcap.reconst.tcp.JpcapReconstructor;
-import pcap.reconst.tcp.PacketReassembler;
-import pcap.reconst.tcp.Reconstructor;
-import pcap.reconst.tcp.StatusHandle;
-import pcap.reconst.tcp.TcpConnection;
-import pcap.reconst.tcp.TcpReassembler;
+import pcap.reconst.tcp.*;
 
 public class HttpReconstructorExample {
 
@@ -43,8 +38,7 @@ public class HttpReconstructorExample {
 			
 			//Reassemble the TCP streams.
 			Map<TcpConnection, TcpReassembler> map = fileDataReconstructor
-					.reconstruct(new File(args[0]), new JpcapReconstructor(
-							new PacketReassembler()));
+					.reconstruct(new File(args[0]), new PktsIoReconstructor(new PacketReassembler()));
 			
 			//Parse the HTTP flows from the streams.
 			HttpFlowParser httpParser = new HttpFlowParser(map);
@@ -71,18 +65,10 @@ public class HttpReconstructorExample {
 						//Request with no body.
 						System.out.println(((RecordedHttpRequest)req).getUrl());
 					} else {
-						try
-						{
-							//Request with a body.
-							RecordedHttpEntityEnclosingRequest rreq = 
-									(RecordedHttpEntityEnclosingRequest)req;
-							System.out.println(rreq.getUrl());
-							System.out.println(EntityUtils.toString(rreq.getEntity()));
-						}
-						catch(ConnectionClosedException e)
-						{
-							System.out.println("ERROR: " + e.getMessage());
-						}
+						//Request with a body.
+						RecordedHttpEntityEnclosingRequest rreq =
+								(RecordedHttpEntityEnclosingRequest)req;
+						System.out.println(rreq.getUrl());
 					}
 					
 					//A flow could be missing a response, we must check
@@ -100,7 +86,7 @@ public class HttpReconstructorExample {
 								HttpEntity decodedent = HttpDecoder.decodeResponse(resp);
 								if(decodedent != null){
 									System.out.println("Decoded response data:");
-									System.out.println(EntityUtils.toString(decodedent));
+//									System.out.println(EntityUtils.toString(decodedent));
 								}
 							}
 						}
@@ -108,6 +94,10 @@ public class HttpReconstructorExample {
 						{
 							System.out.println("ERROR: " + e.getMessage());
 						}
+					}
+					else
+					{
+						System.out.println("No Response");
 					}
 				}	
 			}

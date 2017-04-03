@@ -35,7 +35,8 @@ public class JnetpcapPacketProcessor<T> implements PcapPacketHandler<T> {
 		
 		if (packet.hasHeader(ip) && packet.hasHeader(tcp))
 		{
-			packetReassembler.reassemble(new JnetpcapTcpPacket(packet.getCaptureHeader(), ip, tcp));
+			JnetpcapTcpPacket jnetpcapTcpPacket = new JnetpcapTcpPacket(packet.getCaptureHeader(), ip, tcp);
+			packetReassembler.reassemble(jnetpcapTcpPacket);
 		}
 	}
 }
