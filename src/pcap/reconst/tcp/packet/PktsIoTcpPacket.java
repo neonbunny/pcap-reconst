@@ -1,10 +1,7 @@
 package pcap.reconst.tcp.packet;
 
-import io.pkts.packet.IPPacket;
 import io.pkts.packet.TCPPacket;
-import io.pkts.protocol.Protocol;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -17,8 +14,6 @@ public class PktsIoTcpPacket extends AbstractTcpPacket {
     private InetAddress destinationIp = null;
     private TCPPacket tcpPacket;
 
-    private int payloadLength;
-
     public PktsIoTcpPacket(TCPPacket tcpPacket) {
         this.tcpPacket = tcpPacket;
 
@@ -30,23 +25,6 @@ public class PktsIoTcpPacket extends AbstractTcpPacket {
         }
         catch (UnknownHostException uhe) {
             uhe.printStackTrace();
-        }
-
-        try {
-            if (tcpPacket.getPacket(Protocol.ETHERNET_II) != null)
-            {
-                //Assume Ethernet/IP so 14 bytes for standard Ethernet header + IP length
-                payloadLength = 14 + ((IPPacket) tcpPacket.getPacket(Protocol.IPv4)).getTotalIPLength();
-            }
-            else
-            {
-                payloadLength = (int) tcpPacket.getTotalLength();
-            }
-        } catch (IOException e) {
-            //If this isn't a normal Ethernet/IP/TCP stack, then the best we can do is return the PCAP capture length.
-            // This may be incorrect for padded ethernet frames.
-
-            payloadLength = (int) tcpPacket.getTotalLength();
         }
     }
 
@@ -90,7 +68,7 @@ public class PktsIoTcpPacket extends AbstractTcpPacket {
 
     @Override
     public int getHeaderLength() {
-        return payloadLength - getDataLength();
+        return getLength() - getDataLength();
     }
 
     @Override
